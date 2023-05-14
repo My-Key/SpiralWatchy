@@ -106,19 +106,19 @@ void SpiralWatchy::drawWatchFace()
   double batteryFillScale = BATTERY_MIN + BATTERY_RANGE * batteryFill;
   double rimSize = RIM_SIZE * batteryFillScale;
 
+  double currentLoopScale = pow(LOOP_SCALE, minute / (float)VECTOR_SIZE - minuteNormalized);
 
   for (int i = minute; i < VECTOR_SIZE * 3 + minute; i++)
   {
     int index = i % VECTOR_SIZE;
     int nextIndex = (i + 1) % VECTOR_SIZE;
 
-    double loopScale1 = pow(LOOP_SCALE, i / (float)VECTOR_SIZE - minuteNormalized);
-    double scale1 = FACE_RADIUS * loopScale1;
+    double scale1 = FACE_RADIUS * currentLoopScale;
     Vector v1 = EDGE_VECTORS[index] * scale1 + CENTER;
     Vector uv1 = normals[index] * RADIUS + CENTER;
 
-    double loopScale2 = pow(LOOP_SCALE, (i + 1) / (float)VECTOR_SIZE - minuteNormalized);
-    double scale2 = FACE_RADIUS * loopScale2;
+    double nextLoopScale = pow(LOOP_SCALE, (i + 1) / (float)VECTOR_SIZE - minuteNormalized);
+    double scale2 = FACE_RADIUS * nextLoopScale;
     Vector v2 = EDGE_VECTORS[nextIndex] * scale2 + CENTER;
     Vector uv2 = normals[nextIndex] * RADIUS + CENTER;
 
@@ -132,14 +132,12 @@ void SpiralWatchy::drawWatchFace()
 
     fillTriangle2(v1a, uv1a, v1, uv1, v2, uv2, SpiralFaceWithShadow, 200, 200);
     fillTriangle2(v2a, uv2a, v1a, uv1a, v2, uv2, SpiralFaceWithShadow, 200, 200);
-    //fillTriangle(v1a, uv1a, v1, uv1, v2, uv2, SpiralFaceShadow, 200, 200, GxEPD_BLACK);
-    //fillTriangle(v2a, uv2a, v1a, uv1a, v2, uv2, SpiralFaceShadow, 200, 200, GxEPD_BLACK);
 
-    Vector v4 = EDGE_VECTORS[index] * (scale1 + rimSize * loopScale1) + CENTER;
+    Vector v4 = EDGE_VECTORS[index] * (scale1 + rimSize * currentLoopScale) + CENTER;
     Vector uv3 = normals[index] * -RADIUS + CENTER;
     Vector uv4 = normals[index] * RADIUS + CENTER;
 
-    Vector v6 = EDGE_VECTORS[nextIndex] * (scale2 + rimSize * loopScale2) + CENTER;
+    Vector v6 = EDGE_VECTORS[nextIndex] * (scale2 + rimSize * nextLoopScale) + CENTER;
     Vector uv5 = normals[nextIndex] * -RADIUS + CENTER;
     Vector uv6 = normals[nextIndex] * RADIUS + CENTER;
 
@@ -148,6 +146,8 @@ void SpiralWatchy::drawWatchFace()
 
     display.drawLine(v1.x, v1.y, v2.x, v2.y, GxEPD_BLACK);
     display.drawLine(v4.x, v4.y, v6.x, v6.y, GxEPD_BLACK);
+
+    currentLoopScale = nextLoopScale;
   }
 
   for (int i = VECTOR_SIZE * 3 + minute; i < VECTOR_SIZE * 4 + minute; i++)
@@ -155,26 +155,27 @@ void SpiralWatchy::drawWatchFace()
     int index = i % VECTOR_SIZE;
     int nextIndex = (i + 1) % VECTOR_SIZE;
 
-    double loopScale1 = pow(LOOP_SCALE, i / (float)VECTOR_SIZE - minuteNormalized);
-    double scale1 = FACE_RADIUS * loopScale1;
+    double scale1 = FACE_RADIUS * currentLoopScale;
     Vector v1 = EDGE_VECTORS[index] * scale1 + CENTER;
 
-    double loopScale2 = pow(LOOP_SCALE, (i + 1) / (float)VECTOR_SIZE - minuteNormalized);
-    double scale2 = FACE_RADIUS * loopScale2;
+    double nextLoopScale = pow(LOOP_SCALE, (i + 1) / (float)VECTOR_SIZE - minuteNormalized);
+    double scale2 = FACE_RADIUS * nextLoopScale;
     Vector v2 = EDGE_VECTORS[nextIndex] * scale2 + CENTER;
 
-    Vector v4 = EDGE_VECTORS[index] * (scale1 + rimSize * loopScale1) + CENTER;
+    Vector v4 = EDGE_VECTORS[index] * (scale1 + rimSize * currentLoopScale) + CENTER;
 
-    Vector v6 = EDGE_VECTORS[nextIndex] * (scale2 + rimSize * loopScale2) + CENTER;
+    Vector v6 = EDGE_VECTORS[nextIndex] * (scale2 + rimSize * nextLoopScale) + CENTER;
 
     display.drawTriangle(v1.x, v1.y, v4.x, v4.y, v2.x, v2.y, GxEPD_BLACK);
     display.drawTriangle(v4.x, v4.y, v2.x, v2.y, v6.x, v6.y, GxEPD_BLACK);
+
+    currentLoopScale = nextLoopScale;
   }
 
-  Vector corner1 = {50.0,50.0};
-  Vector corner2 = {149.0,50.0};
-  Vector corner3 = {149.0,149.0};
-  Vector corner4 = {50.0,149.0};
+  Vector corner1 = {66.0,66.0};
+  Vector corner2 = {133.0,66.0};
+  Vector corner3 = {133.0,133.0};
+  Vector corner4 = {66.0,133.0};
 
   fillTriangle(corner1, corner1, corner2, corner2, corner3, corner3, SpiralFaceShadowCenter, 200, 200, GxEPD_BLACK);
   fillTriangle(corner3, corner3, corner4, corner4, corner1, corner1, SpiralFaceShadowCenter, 200, 200, GxEPD_BLACK);
@@ -369,7 +370,14 @@ void SpiralWatchy::fillTriangle(VectorInt v0, Vector uv0, VectorInt v1, Vector u
 
   int startY = v0.y;
 
-  for (y = startY; y <= last; y++) {
+  if (startY < 0)
+  {
+    sa += -startY * dx01;
+    sb += -startY * dx02;
+    startY = 0;
+  }
+
+  for (y = startY; y <= last && y < 200; y++) {
     a = v0.x + sa / dy01;
     b = v0.x + sb / dy02;
 
@@ -384,21 +392,29 @@ void SpiralWatchy::fillTriangle(VectorInt v0, Vector uv0, VectorInt v1, Vector u
     if (a > b)
       _swap_int16_t(a, b);
 
-    if (y >= 0 && y < 200)
-      drawLine(a, y, b - a + 1, v0, uv0, aa, uv1, bb, uv2, invDen, bitmap, w, h);
+    drawLine(a, y, b - a + 1, v0, uv0, aa, uv1, bb, uv2, invDen, bitmap, w, h);
   }
+
+  startY = last + 1;
 
   // For lower part of triangle, find scanline crossings for segments
   // 0-2 and 1-2.  This loop is skipped if y1=y2.
-  sa = (int32_t)dx12 * (y - v1.y);
-  sb = (int32_t)dx02 * (y - v0.y);
+  sa = (int32_t)dx12 * (startY - v1.y);
+  sb = (int32_t)dx02 * (startY - v0.y);
   
+  if (startY < 0)
+  {
+    sa += -startY * dx12;
+    sb += -startY * dx02;
+    startY = 0;
+  }
+ 
   int endY = v2.y;
 
   if (endY > 200)
     endY = 200;
 
-  for (; y <= endY; y++) {
+  for (y = startY; y <= endY; y++) {
     a = v1.x + sa / dy12;
     b = v0.x + sb / dy02;
 
@@ -412,8 +428,7 @@ void SpiralWatchy::fillTriangle(VectorInt v0, Vector uv0, VectorInt v1, Vector u
     if (a > b)
       _swap_int16_t(a, b);
 
-    if (y >= 0)
-      drawLine(a, y, b - a + 1, v0, uv0, aa, uv1, bb, uv2, invDen, bitmap, w, h);
+    drawLine(a, y, b - a + 1, v0, uv0, aa, uv1, bb, uv2, invDen, bitmap, w, h);
   }
   display.endWrite();
 }
@@ -526,7 +541,14 @@ void SpiralWatchy::fillTriangle2(VectorInt v0, Vector uv0, VectorInt v1, Vector 
 
   int startY = v0.y;
 
-  for (y = startY; y <= last; y++) {
+  if (startY < 0)
+  {
+    sa += -startY * dx01;
+    sb += -startY * dx02;
+    startY = 0;
+  }
+
+  for (y = startY; y <= last && y < 200; y++) {
     a = v0.x + sa / dy01;
     b = v0.x + sb / dy02;
 
@@ -545,17 +567,26 @@ void SpiralWatchy::fillTriangle2(VectorInt v0, Vector uv0, VectorInt v1, Vector 
       drawLine2(a, y, b - a + 1, v0, uv0, aa, uv1, bb, uv2, invDen, bitmap, w, h);
   }
 
+  startY = last + 1;
+
   // For lower part of triangle, find scanline crossings for segments
   // 0-2 and 1-2.  This loop is skipped if y1=y2.
-  sa = (int32_t)dx12 * (y - v1.y);
-  sb = (int32_t)dx02 * (y - v0.y);
+  sa = (int32_t)dx12 * (startY - v1.y);
+  sb = (int32_t)dx02 * (startY - v0.y);
+  
+  if (startY < 0)
+  {
+    sa += -startY * dx12;
+    sb += -startY * dx02;
+    startY = 0;
+  }
  
   int endY = v2.y;
 
   if (endY > 200)
     endY = 200;
 
-  for (; y <= endY; y++) {
+  for (y = startY; y <= endY; y++) {
     a = v1.x + sa / dy12;
     b = v0.x + sb / dy02;
 
@@ -569,8 +600,7 @@ void SpiralWatchy::fillTriangle2(VectorInt v0, Vector uv0, VectorInt v1, Vector 
     if (a > b)
       _swap_int16_t(a, b);
 
-    if (y >= 0)
-      drawLine2(a, y, b - a + 1, v0, uv0, aa, uv1, bb, uv2, invDen, bitmap, w, h);
+    drawLine2(a, y, b - a + 1, v0, uv0, aa, uv1, bb, uv2, invDen, bitmap, w, h);
   }
   display.endWrite();
 }
@@ -680,7 +710,14 @@ void SpiralWatchy::fillTriangle(VectorInt v0, Vector uv0, VectorInt v1, Vector u
 
   int startY = v0.y;
 
-  for (y = startY; y <= last; y++) {
+  if (startY < 0)
+  {
+    sa += -startY * dx01;
+    sb += -startY * dx02;
+    startY = 0;
+  }
+
+  for (y = startY; y <= last && y < 200; y++) {
     a = v0.x + sa / dy01;
     b = v0.x + sb / dy02;
 
@@ -695,21 +732,29 @@ void SpiralWatchy::fillTriangle(VectorInt v0, Vector uv0, VectorInt v1, Vector u
     if (a > b)
       _swap_int16_t(a, b);
 
-    if (y >= 0 && y < 200)
-      drawLine(a, y, b - a + 1, v0, uv0, aa, uv1, bb, uv2, invDen, bitmap, w, h, color);
+    drawLine(a, y, b - a + 1, v0, uv0, aa, uv1, bb, uv2, invDen, bitmap, w, h, color);
   }
+
+  startY = last + 1;
 
   // For lower part of triangle, find scanline crossings for segments
   // 0-2 and 1-2.  This loop is skipped if y1=y2.
-  sa = (int32_t)dx12 * (y - v1.y);
-  sb = (int32_t)dx02 * (y - v0.y);
+  sa = (int32_t)dx12 * (startY - v1.y);
+  sb = (int32_t)dx02 * (startY - v0.y);
+
+  if (startY < 0)
+  {
+    sa += -startY * dx12;
+    sb += -startY * dx02;
+    startY = 0;
+  }
 
   int endY = v2.y;
 
   if (endY > 200)
     endY = 200;
 
-  for (; y <= endY; y++) {
+  for (y = startY; y <= endY; y++) {
     a = v1.x + sa / dy12;
     b = v0.x + sb / dy02;
 
@@ -723,8 +768,7 @@ void SpiralWatchy::fillTriangle(VectorInt v0, Vector uv0, VectorInt v1, Vector u
     if (a > b)
       _swap_int16_t(a, b);
 
-    if (y >= 0)
-      drawLine(a, y, b - a + 1, v0, uv0, aa, uv1, bb, uv2, invDen, bitmap, w, h, color);
+   drawLine(a, y, b - a + 1, v0, uv0, aa, uv1, bb, uv2, invDen, bitmap, w, h, color);
   }
   display.endWrite();
 }

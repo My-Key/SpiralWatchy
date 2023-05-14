@@ -1,44 +1,48 @@
 #include "SpiralWatchy.h"
 
-const float VOLTAGE_MIN = 3.5;
-const float VOLTAGE_MAX = 4.2;
-const float VOLTAGE_WARNING = 3.6;
+const float VOLTAGE_MIN = 3.5f;
+const float VOLTAGE_MAX = 4.2f;
+const float VOLTAGE_WARNING = 3.6f;
 const float VOLTAGE_RANGE = VOLTAGE_MAX - VOLTAGE_MIN;
 
 const int DENSITY = 1;
 const int VECTOR_SIZE = 60 * DENSITY;
-const double STEP_ANGLE = 360 / VECTOR_SIZE;
+const float STEP_ANGLE = 360 / VECTOR_SIZE;
 
 const int STEP_MINUTE = DENSITY;
 const int STEP_HOUR = VECTOR_SIZE/12;
 
-const Vector CENTER = {99.5, 99.5};
+const Vector CENTER = {99.5f, 99.5f};
 const int RADIUS = 99;
 const int RIM_SIZE = 20;
 const int FACE_RADIUS = 260 - RIM_SIZE;
 
-const double BATTERY_MIN = 0.5;
-const double BATTERY_RANGE = 1.0 - BATTERY_MIN;
-const double BATTERY_WARNING = BATTERY_MIN + ((VOLTAGE_WARNING - VOLTAGE_MIN) / VOLTAGE_RANGE) * BATTERY_RANGE;
+const float BATTERY_MIN = 0.5f;
+const float BATTERY_RANGE = 1.0f - BATTERY_MIN;
+const float BATTERY_WARNING = BATTERY_MIN + ((VOLTAGE_WARNING - VOLTAGE_MIN) / VOLTAGE_RANGE) * BATTERY_RANGE;
 
+const Vector SHADOW_CORNER_1 = {66.0f,66.0f};
+const Vector SHADOR_CORNER_2 = {133.0f,66.0f};
+const Vector SHADOR_CORNER_3 = {133.0f,133.0f};
+const Vector SHADOR_CORNER_4 = {66.0f,133.0f};
 
-const double LOOP_SCALE = 0.45;
+const float LOOP_SCALE = 0.45f;
 
 const Vector HAND[] =
-{{0, -1.0},
- {0, -0.8}, 
- {0.1, -0.8},
-{0, 0},
- {0.05, 0.15},
-{-0.05, 0.15},
- {-0.1, -0.8}};
+{{0.0f, -1.0f},
+ {0.0f, -0.8f}, 
+ {0.1f, -0.8f},
+{0.0f, 0.0f},
+ {0.05f, 0.15f},
+{-0.05f, 0.15f},
+ {-0.1f, -0.8f}};
 
 const Vector HAND_NORMAL[] =
-{{0.5, -0.85}, {0.2, -0.2}, {0.85, -0.5},
-{0.3, -0.1}, {0.96, -0.1}, {0.3, 0.1}, {0.96, 0.1},
-{0, 0.3}, {0.1, 0.96}, {-0.1, 0.96},
-{-0.3, -0.1}, {-0.96, -0.1}, {-0.3, 0.1}, {-0.96, 0.1},
-{-0.5, -0.85}, {-0.2, -0.2}, {-0.85, -0.5}};
+{{0.5f, -0.85f}, {0.2f, -0.2f}, {0.85f, -0.5f},
+{0.3f, -0.1f}, {0.96f, -0.1f}, {0.3f, 0.1f}, {0.96f, 0.1f},
+{0.0f, 0.3f}, {0.1f, 0.96f}, {-0.1f, 0.96f},
+{-0.3f, -0.1f}, {-0.96f, -0.1f}, {-0.3f, 0.1f}, {-0.96f, 0.1f},
+{-0.5f, -0.85f}, {-0.2f, -0.2f}, {-0.85f, -0.5f}};
 
 const int HAND_POS_INDEX[] = 
 {0,1,2,
@@ -69,7 +73,7 @@ Vector EDGE_NORMAL[VECTOR_SIZE];
 
 SpiralWatchy::SpiralWatchy(const watchySettings& s) : Watchy(s)
 {
-  Vector up = {-1.0, 0.0};
+  Vector up = {-1.0f, 0.0f};
   
   for (int i = 0; i < VECTOR_SIZE; i++)
   {
@@ -79,9 +83,9 @@ SpiralWatchy::SpiralWatchy(const watchySettings& s) : Watchy(s)
   }
 }
 
-static double lerp(double a, double b, double f)
+static float lerp(float a, float b, float f)
 {
-    return a * (1.0 - f) + (b * f);
+    return a * (1.0f - f) + (b * f);
 }
 
 void SpiralWatchy::drawWatchFace()
@@ -89,57 +93,50 @@ void SpiralWatchy::drawWatchFace()
   display.fillScreen(GxEPD_WHITE);
   display.setTextColor(GxEPD_BLACK);
 
-  Vector normals[VECTOR_SIZE];
-
-  for (int i = 0; i < VECTOR_SIZE; i++)
-  {
-    normals[i] = EDGE_NORMAL[i];
-  }
-
   int hour = currentTime.Hour;
   int minute = currentTime.Minute;
   
-  double minuteNormalized = minute / 60.0;
-  double hourNormalized = (hour + minuteNormalized) / 24.0;
+  float minuteNormalized = minute / 60.0f;
+  float hourNormalized = (hour + minuteNormalized) / 24.0f;
 
-  double batteryFill = getBatteryFill();
-  double batteryFillScale = BATTERY_MIN + BATTERY_RANGE * batteryFill;
-  double rimSize = RIM_SIZE * batteryFillScale;
+  float batteryFill = getBatteryFill();
+  float batteryFillScale = BATTERY_MIN + BATTERY_RANGE * batteryFill;
+  float rimSize = RIM_SIZE * batteryFillScale;
 
-  double currentLoopScale = pow(LOOP_SCALE, minute / (float)VECTOR_SIZE - minuteNormalized);
+  float currentLoopScale = pow(LOOP_SCALE, minute / (float)VECTOR_SIZE - minuteNormalized);
 
   for (int i = minute; i < VECTOR_SIZE * 3 + minute; i++)
   {
     int index = i % VECTOR_SIZE;
     int nextIndex = (i + 1) % VECTOR_SIZE;
 
-    double scale1 = FACE_RADIUS * currentLoopScale;
+    float scale1 = FACE_RADIUS * currentLoopScale;
     Vector v1 = EDGE_VECTORS[index] * scale1 + CENTER;
-    Vector uv1 = normals[index] * RADIUS + CENTER;
+    Vector uv1 = EDGE_NORMAL[index] * RADIUS + CENTER;
 
-    double nextLoopScale = pow(LOOP_SCALE, (i + 1) / (float)VECTOR_SIZE - minuteNormalized);
-    double scale2 = FACE_RADIUS * nextLoopScale;
+    float nextLoopScale = pow(LOOP_SCALE, (i + 1) / (float)VECTOR_SIZE - minuteNormalized);
+    float scale2 = FACE_RADIUS * nextLoopScale;
     Vector v2 = EDGE_VECTORS[nextIndex] * scale2 + CENTER;
-    Vector uv2 = normals[nextIndex] * RADIUS + CENTER;
+    Vector uv2 = EDGE_NORMAL[nextIndex] * RADIUS + CENTER;
 
-    double scale3 = scale1 * LOOP_SCALE;
+    float scale3 = scale1 * LOOP_SCALE;
     Vector v1a = EDGE_VECTORS[index] * scale3 + CENTER;
-    Vector uv1a = normals[index] * RADIUS * LOOP_SCALE + CENTER;
+    Vector uv1a = EDGE_NORMAL[index] * RADIUS * LOOP_SCALE + CENTER;
 
-    double scale4 = scale2 * LOOP_SCALE;
+    float scale4 = scale2 * LOOP_SCALE;
     Vector v2a = EDGE_VECTORS[nextIndex] * scale4 + CENTER;
-    Vector uv2a = normals[nextIndex] * RADIUS * LOOP_SCALE + CENTER;
+    Vector uv2a = EDGE_NORMAL[nextIndex] * RADIUS * LOOP_SCALE + CENTER;
 
     fillTriangle2(v1a, uv1a, v1, uv1, v2, uv2, SpiralFaceWithShadow, 200, 200);
     fillTriangle2(v2a, uv2a, v1a, uv1a, v2, uv2, SpiralFaceWithShadow, 200, 200);
 
     Vector v4 = EDGE_VECTORS[index] * (scale1 + rimSize * currentLoopScale) + CENTER;
-    Vector uv3 = normals[index] * -RADIUS + CENTER;
-    Vector uv4 = normals[index] * RADIUS + CENTER;
+    Vector uv3 = EDGE_NORMAL[index] * -RADIUS + CENTER;
+    Vector uv4 = EDGE_NORMAL[index] * RADIUS + CENTER;
 
     Vector v6 = EDGE_VECTORS[nextIndex] * (scale2 + rimSize * nextLoopScale) + CENTER;
-    Vector uv5 = normals[nextIndex] * -RADIUS + CENTER;
-    Vector uv6 = normals[nextIndex] * RADIUS + CENTER;
+    Vector uv5 = EDGE_NORMAL[nextIndex] * -RADIUS + CENTER;
+    Vector uv6 = EDGE_NORMAL[nextIndex] * RADIUS + CENTER;
 
     fillTriangle2(v1, uv3, v4, uv4, v2, uv5, MatCapSource, 200, 200);
     fillTriangle2(v4, uv4, v2, uv5, v6, uv6, MatCapSource, 200, 200);
@@ -155,11 +152,11 @@ void SpiralWatchy::drawWatchFace()
     int index = i % VECTOR_SIZE;
     int nextIndex = (i + 1) % VECTOR_SIZE;
 
-    double scale1 = FACE_RADIUS * currentLoopScale;
+    float scale1 = FACE_RADIUS * currentLoopScale;
     Vector v1 = EDGE_VECTORS[index] * scale1 + CENTER;
 
-    double nextLoopScale = pow(LOOP_SCALE, (i + 1) / (float)VECTOR_SIZE - minuteNormalized);
-    double scale2 = FACE_RADIUS * nextLoopScale;
+    float nextLoopScale = pow(LOOP_SCALE, (i + 1) / (float)VECTOR_SIZE - minuteNormalized);
+    float scale2 = FACE_RADIUS * nextLoopScale;
     Vector v2 = EDGE_VECTORS[nextIndex] * scale2 + CENTER;
 
     Vector v4 = EDGE_VECTORS[index] * (scale1 + rimSize * currentLoopScale) + CENTER;
@@ -172,25 +169,20 @@ void SpiralWatchy::drawWatchFace()
     currentLoopScale = nextLoopScale;
   }
 
-  Vector corner1 = {66.0,66.0};
-  Vector corner2 = {133.0,66.0};
-  Vector corner3 = {133.0,133.0};
-  Vector corner4 = {66.0,133.0};
+  fillTriangle(SHADOW_CORNER_1, SHADOW_CORNER_1, SHADOR_CORNER_2, SHADOR_CORNER_2, SHADOR_CORNER_3, SHADOR_CORNER_3, SpiralFaceShadowCenter, 200, 200, GxEPD_BLACK);
+  fillTriangle(SHADOR_CORNER_3, SHADOR_CORNER_3, SHADOR_CORNER_4, SHADOR_CORNER_4, SHADOW_CORNER_1, SHADOW_CORNER_1, SpiralFaceShadowCenter, 200, 200, GxEPD_BLACK);
 
-  fillTriangle(corner1, corner1, corner2, corner2, corner3, corner3, SpiralFaceShadowCenter, 200, 200, GxEPD_BLACK);
-  fillTriangle(corner3, corner3, corner4, corner4, corner1, corner1, SpiralFaceShadowCenter, 200, 200, GxEPD_BLACK);
-
-  double hourAngle = ((double)(hour % 12) + minuteNormalized) * 30;
+  float hourAngle = ((float)(hour % 12) + minuteNormalized) * 30;
 
   DrawHand(hourAngle, 70);
   DrawHand(minute * 6, 90);
 }
 
-void SpiralWatchy::DrawHand(double angle, double size)
+void SpiralWatchy::DrawHand(float angle, float size)
 {
-  double radians = angle * DEG_TO_RAD;
-  double sinAngle = sin(radians);
-  double cosAngle = cos(radians);
+  float radians = angle * DEG_TO_RAD;
+  float sinAngle = sin(radians);
+  float cosAngle = cos(radians);
 
   for (int i = 0; i < HAND_POS_LEN; i++)
   {
@@ -220,10 +212,10 @@ float SpiralWatchy::getBatteryFill()
 
   // 12 battery states
   float batState = ((VBAT - VOLTAGE_MIN) / VOLTAGE_RANGE);
-  if (batState > 1.0)
-    batState = 1.0;
-  if (batState < 0.0)
-    batState = 0;
+  if (batState > 1.0f)
+    batState = 1.0f;
+  if (batState < 0.0f)
+    batState = 0.0f;
 
   return batState;
 }
@@ -255,7 +247,7 @@ float SpiralWatchy::getBatteryFill()
   }
 #endif
 
-static double clamp(double val, double min, double max)
+static float clamp(float val, float min, float max)
 {
   if (val > max)
     val = max;
@@ -266,7 +258,7 @@ static double clamp(double val, double min, double max)
   return val;
 }
 
-static void barycentric(VectorInt p, VectorInt v0, VectorInt v1, VectorInt a, double invDen, double &u, double &v, double &w)
+static void barycentric(VectorInt p, VectorInt v0, VectorInt v1, VectorInt a, float invDen, float &u, float &v, float &w)
 {
     VectorInt v2 = p - a;
     // ToDo: Premultiply v0 and v1 by invDen?
@@ -282,11 +274,11 @@ static bool getColor(int16_t x, int16_t y, const uint8_t *bitmap, int16_t w, int
   return (pgm_read_byte(bitmap + y * byteWidth + x / 8) & (128 >> (x & 7)));
 }
 
-void SpiralWatchy::drawLine(int x, int y, int w, VectorInt v0, Vector uv0, VectorInt a, Vector uv1, VectorInt b, Vector uv2, double invDen, const uint8_t *bitmap, int16_t bw, int16_t bh)
+void SpiralWatchy::drawLine(int x, int y, int w, VectorInt v0, Vector uv0, VectorInt a, Vector uv1, VectorInt b, Vector uv2, float invDen, const uint8_t *bitmap, int16_t bw, int16_t bh)
 {
   for (int i = 0; i < w; i++)
   {
-    double ua, va, wa;
+    float ua, va, wa;
     VectorInt pointA = {x + i, y};
     barycentric(pointA, a, b, v0, invDen, ua, va, wa);
 
@@ -366,7 +358,7 @@ void SpiralWatchy::fillTriangle(VectorInt v0, Vector uv0, VectorInt v1, Vector u
 
     
   VectorInt aa = v1 - v0, bb = v2 - v0;
-  double invDen = 1 / VectorInt::crossProduct(aa, bb);
+  float invDen = 1 / VectorInt::crossProduct(aa, bb);
 
   int startY = v0.y;
 
@@ -439,7 +431,7 @@ void SpiralWatchy::writeFastHLineUV(int16_t x, int16_t y, int16_t w, Vector uvA,
 
   for (int i = 0; i < w; i++)
   {
-    double lerpVal = i / (w + 1.0);
+    float lerpVal = i / (w + 1.0);
     Vector uv = (uvA * lerpVal) + (uvB * (1.0 - lerpVal));
     bool white = getColor(uv.x, uv.y, bitmap, bw, bh);
     display.drawPixel(x + i, y, white ? GxEPD_WHITE : GxEPD_BLACK);
@@ -453,11 +445,11 @@ static bool getColor2(int16_t x, int16_t y, int16_t xUv, int16_t yUv, const uint
   return bitmap[yUv * w + xUv] > BlueNoise200[y * 200 + x];
 }
 
-void SpiralWatchy::drawLine2(int x, int y, int w, VectorInt v0, Vector uv0, VectorInt a, Vector uv1, VectorInt b, Vector uv2, double invDen, const uint8_t *bitmap, int16_t bw, int16_t bh)
+void SpiralWatchy::drawLine2(int x, int y, int w, VectorInt v0, Vector uv0, VectorInt a, Vector uv1, VectorInt b, Vector uv2, float invDen, const uint8_t *bitmap, int16_t bw, int16_t bh)
 {
   for (int i = 0; i < w; i++)
   {
-    double ua, va, wa;
+    float ua, va, wa;
     VectorInt pointA = {x + i, y};
     barycentric(pointA, a, b, v0, invDen, ua, va, wa);
 
@@ -537,7 +529,7 @@ void SpiralWatchy::fillTriangle2(VectorInt v0, Vector uv0, VectorInt v1, Vector 
 
     
   VectorInt aa = v1 - v0, bb = v2 - v0;
-  double invDen = 1 / VectorInt::crossProduct(aa, bb);
+  float invDen = 1 / VectorInt::crossProduct(aa, bb);
 
   int startY = v0.y;
 
@@ -611,7 +603,7 @@ void SpiralWatchy::writeFastHLineUV2(int16_t x, int16_t y, int16_t w, Vector uvA
 
   for (int i = 0; i < w; i++)
   {
-    double lerpVal = i / (w + 1.0);
+    float lerpVal = i / (w + 1.0);
     Vector uv = (uvA * lerpVal) + (uvB * (1.0 - lerpVal));
     bool white = getColor2(x + i, y, uv.x, uv.y, bitmap, bw, bh);
     display.drawPixel(x + i, y, white ? GxEPD_WHITE : GxEPD_BLACK);
@@ -620,11 +612,11 @@ void SpiralWatchy::writeFastHLineUV2(int16_t x, int16_t y, int16_t w, Vector uvA
   display.endWrite();
 }
 
-void SpiralWatchy::drawLine(int x, int y, int w, VectorInt v0, Vector uv0, VectorInt a, Vector uv1, VectorInt b, Vector uv2, double invDen, const uint8_t *bitmap, int16_t bw, int16_t bh, uint16_t color)
+void SpiralWatchy::drawLine(int x, int y, int w, VectorInt v0, Vector uv0, VectorInt a, Vector uv1, VectorInt b, Vector uv2, float invDen, const uint8_t *bitmap, int16_t bw, int16_t bh, uint16_t color)
 {
   for (int i = 0; i < w; i++)
   {
-    double ua, va, wa;
+    float ua, va, wa;
     VectorInt pointA = {x + i, y};
     barycentric(pointA, a, b, v0, invDen, ua, va, wa);
 
@@ -706,7 +698,7 @@ void SpiralWatchy::fillTriangle(VectorInt v0, Vector uv0, VectorInt v1, Vector u
 
     
   VectorInt aa = v1 - v0, bb = v2 - v0;
-  double invDen = 1 / VectorInt::crossProduct(aa, bb);
+  float invDen = 1 / VectorInt::crossProduct(aa, bb);
 
   int startY = v0.y;
 
@@ -779,7 +771,7 @@ void SpiralWatchy::writeFastHLineUV(int16_t x, int16_t y, int16_t w, Vector uvA,
 
   for (int i = 0; i < w; i++)
   {
-    double lerpVal = i / (w + 1.0);
+    float lerpVal = i / (w + 1.0);
     Vector uv = (uvA * lerpVal) + (uvB * (1.0 - lerpVal));
     bool draw = getColor2(x + i, y, uv.x, uv.y, bitmap, bw, bh);
 

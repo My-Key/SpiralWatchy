@@ -8,12 +8,12 @@ struct VectorInt
     int y;
 
 public:
-    static double dotProduct(const VectorInt& v1, const VectorInt& v2)
+    static float dotProduct(const VectorInt& v1, const VectorInt& v2)
     {
         return v1.x * v2.x + v1.y * v2.y;
     }
 
-    static double crossProduct(const VectorInt& v1, const VectorInt& v2)
+    static float crossProduct(const VectorInt& v1, const VectorInt& v2)
     {
         return v1.x * v2.y - v1.y * v2.x;
     }
@@ -35,11 +35,11 @@ public:
         }
     }
 
-    static VectorInt rotateVector(const VectorInt& vector, const double& angle)
+    static VectorInt rotateVector(const VectorInt& vector, const float& angle)
     {
-        double radians = angle * DEG_TO_RAD;
-        double sinAngle = sin(radians);
-        double cosAngle = cos(radians);
+        float radians = angle * DEG_TO_RAD;
+        float sinAngle = sin(radians);
+        float cosAngle = cos(radians);
 
         VectorInt newVector = {0,0};
         newVector.x = cosAngle * vector.x - sinAngle * vector.y;
@@ -49,7 +49,7 @@ public:
 
     void normalize()
     {
-        double magnitude = sqrt(x * x + y * y);
+        float magnitude = sqrt(x * x + y * y);
 
         if (magnitude <= 0.0)
             return;
@@ -58,7 +58,7 @@ public:
         y /= magnitude;
     }
 
-    void scale(const double& scale)
+    void scale(const float& scale)
     {
         x *= scale;
         y *= scale;
@@ -74,7 +74,7 @@ public:
         return {x - a.x, y - a.y};
     }
 
-    VectorInt operator*(const double scale) const
+    VectorInt operator*(const float scale) const
     {
         return {x * scale, y * scale};
     }

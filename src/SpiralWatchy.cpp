@@ -68,8 +68,9 @@ const int HAND_OUTLINE_INDEX[] = {0,2,4,5,6};
 
 const int HAND_OUTLINE_LEN = 5;
 
-Vector EDGE_VECTORS[VECTOR_SIZE];
 Vector EDGE_NORMAL[VECTOR_SIZE];
+
+float SCALE[VECTOR_SIZE * 4];
 
 SpiralWatchy::SpiralWatchy(const watchySettings& s) : Watchy(s)
 {
@@ -77,9 +78,13 @@ SpiralWatchy::SpiralWatchy(const watchySettings& s) : Watchy(s)
   
   for (int i = 0; i < VECTOR_SIZE; i++)
   {
-    EDGE_NORMAL[i] = EDGE_VECTORS[i] = Vector::rotateVector(up, i * STEP_ANGLE);
+    EDGE_NORMAL[i] = Vector::rotateVector(up, i * STEP_ANGLE);
     EDGE_NORMAL[i].normalize();
-    EDGE_VECTORS[i].normalize();
+  }
+
+  for (int i = 0; i < VECTOR_SIZE * 4; i++)
+  {
+    SCALE[i] = pow(LOOP_SCALE, i / (float)VECTOR_SIZE);
   }
 }
 
@@ -103,38 +108,41 @@ void SpiralWatchy::drawWatchFace()
   float batteryFillScale = BATTERY_MIN + BATTERY_RANGE * batteryFill;
   float rimSize = RIM_SIZE * batteryFillScale;
 
-  float currentLoopScale = pow(LOOP_SCALE, minute / (float)VECTOR_SIZE - minuteNormalized);
-
   for (int i = minute; i < VECTOR_SIZE * 3 + minute; i++)
   {
     int index = i % VECTOR_SIZE;
     int nextIndex = (i + 1) % VECTOR_SIZE;
 
-    float scale1 = FACE_RADIUS * currentLoopScale;
-    Vector v1 = EDGE_VECTORS[index] * scale1 + CENTER;
+    int scaleIndex = i - minute;
+    int scaleNextIndex = scaleIndex + 1;
+
+    float currentLoopSCale = SCALE[scaleIndex];
+
+    float scale1 = FACE_RADIUS * currentLoopSCale;
+    Vector v1 = EDGE_NORMAL[index] * scale1 + CENTER;
     Vector uv1 = EDGE_NORMAL[index] * RADIUS + CENTER;
 
-    float nextLoopScale = pow(LOOP_SCALE, (i + 1) / (float)VECTOR_SIZE - minuteNormalized);
+    float nextLoopScale = SCALE[scaleNextIndex];
     float scale2 = FACE_RADIUS * nextLoopScale;
-    Vector v2 = EDGE_VECTORS[nextIndex] * scale2 + CENTER;
+    Vector v2 = EDGE_NORMAL[nextIndex] * scale2 + CENTER;
     Vector uv2 = EDGE_NORMAL[nextIndex] * RADIUS + CENTER;
 
     float scale3 = scale1 * LOOP_SCALE;
-    Vector v1a = EDGE_VECTORS[index] * scale3 + CENTER;
+    Vector v1a = EDGE_NORMAL[index] * scale3 + CENTER;
     Vector uv1a = EDGE_NORMAL[index] * RADIUS * LOOP_SCALE + CENTER;
 
     float scale4 = scale2 * LOOP_SCALE;
-    Vector v2a = EDGE_VECTORS[nextIndex] * scale4 + CENTER;
+    Vector v2a = EDGE_NORMAL[nextIndex] * scale4 + CENTER;
     Vector uv2a = EDGE_NORMAL[nextIndex] * RADIUS * LOOP_SCALE + CENTER;
 
     fillTriangle2(v1a, uv1a, v1, uv1, v2, uv2, SpiralFaceWithShadow, 200, 200);
     fillTriangle2(v2a, uv2a, v1a, uv1a, v2, uv2, SpiralFaceWithShadow, 200, 200);
 
-    Vector v4 = EDGE_VECTORS[index] * (scale1 + rimSize * currentLoopScale) + CENTER;
+    Vector v4 = EDGE_NORMAL[index] * (scale1 + rimSize * currentLoopSCale) + CENTER;
     Vector uv3 = EDGE_NORMAL[index] * -RADIUS + CENTER;
     Vector uv4 = EDGE_NORMAL[index] * RADIUS + CENTER;
 
-    Vector v6 = EDGE_VECTORS[nextIndex] * (scale2 + rimSize * nextLoopScale) + CENTER;
+    Vector v6 = EDGE_NORMAL[nextIndex] * (scale2 + rimSize * nextLoopScale) + CENTER;
     Vector uv5 = EDGE_NORMAL[nextIndex] * -RADIUS + CENTER;
     Vector uv6 = EDGE_NORMAL[nextIndex] * RADIUS + CENTER;
 
@@ -143,30 +151,31 @@ void SpiralWatchy::drawWatchFace()
 
     display.drawLine(v1.x, v1.y, v2.x, v2.y, GxEPD_BLACK);
     display.drawLine(v4.x, v4.y, v6.x, v6.y, GxEPD_BLACK);
-
-    currentLoopScale = nextLoopScale;
   }
 
-  for (int i = VECTOR_SIZE * 3 + minute; i < VECTOR_SIZE * 4 + minute; i++)
+  for (int i = VECTOR_SIZE * 3 + minute; i < VECTOR_SIZE * 4 + minute - 1; i++)
   {
     int index = i % VECTOR_SIZE;
     int nextIndex = (i + 1) % VECTOR_SIZE;
 
-    float scale1 = FACE_RADIUS * currentLoopScale;
-    Vector v1 = EDGE_VECTORS[index] * scale1 + CENTER;
+    int scaleIndex = i - minute;
+    int scaleNextIndex = scaleIndex + 1;
 
-    float nextLoopScale = pow(LOOP_SCALE, (i + 1) / (float)VECTOR_SIZE - minuteNormalized);
+    float currentLoopSCale = SCALE[scaleIndex];
+
+    float scale1 = FACE_RADIUS * currentLoopSCale;
+    Vector v1 = EDGE_NORMAL[index] * scale1 + CENTER;
+
+    float nextLoopScale = SCALE[scaleNextIndex];
     float scale2 = FACE_RADIUS * nextLoopScale;
-    Vector v2 = EDGE_VECTORS[nextIndex] * scale2 + CENTER;
+    Vector v2 = EDGE_NORMAL[nextIndex] * scale2 + CENTER;
 
-    Vector v4 = EDGE_VECTORS[index] * (scale1 + rimSize * currentLoopScale) + CENTER;
+    Vector v4 = EDGE_NORMAL[index] * (scale1 + rimSize * currentLoopSCale) + CENTER;
 
-    Vector v6 = EDGE_VECTORS[nextIndex] * (scale2 + rimSize * nextLoopScale) + CENTER;
+    Vector v6 = EDGE_NORMAL[nextIndex] * (scale2 + rimSize * nextLoopScale) + CENTER;
 
     display.drawTriangle(v1.x, v1.y, v4.x, v4.y, v2.x, v2.y, GxEPD_BLACK);
     display.drawTriangle(v4.x, v4.y, v2.x, v2.y, v6.x, v6.y, GxEPD_BLACK);
-
-    currentLoopScale = nextLoopScale;
   }
 
   fillTriangle(SHADOW_CORNER_1, SHADOW_CORNER_1, SHADOR_CORNER_2, SHADOR_CORNER_2, SHADOR_CORNER_3, SHADOR_CORNER_3, SpiralFaceShadowCenter, 200, 200, GxEPD_BLACK);
@@ -197,12 +206,15 @@ void SpiralWatchy::DrawHand(float angle, float size)
     fillTriangle2(v1, uv1, v2, uv2, v3, uv3, MatCapSource, 200, 200);
   }
 
+  Vector currentPoint = Vector::rotateVector(HAND[HAND_OUTLINE_INDEX[0]], sinAngle, cosAngle) * size + CENTER;
+
   for (int i = 0; i < HAND_OUTLINE_LEN; i++)
   {
-    Vector v1 = Vector::rotateVector(HAND[HAND_OUTLINE_INDEX[i]], sinAngle, cosAngle) * size + CENTER;
-    Vector v2 = Vector::rotateVector(HAND[HAND_OUTLINE_INDEX[(i + 1) % HAND_OUTLINE_LEN]], sinAngle, cosAngle) * size + CENTER;
+    Vector nextPoint = Vector::rotateVector(HAND[HAND_OUTLINE_INDEX[(i + 1) % HAND_OUTLINE_LEN]], sinAngle, cosAngle) * size + CENTER;
 
-    display.drawLine(v1.x, v1.y, v2.x, v2.y, GxEPD_BLACK);
+    display.drawLine(currentPoint.x, currentPoint.y, nextPoint.x, nextPoint.y, GxEPD_BLACK);
+
+    currentPoint = nextPoint;
   }
 }
 
